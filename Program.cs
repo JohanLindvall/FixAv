@@ -1,33 +1,25 @@
 ﻿namespace FixAv
 {
-    using System;
-    using System.ComponentModel;
-    using System.Diagnostics;
+    using Topshelf;
 
     class Program
     {
         static void Main(string[] args)
         {
-            foreach (var process in Process.GetProcesses())
+            HostFactory.Run(x =>
             {
-                try
+                x.Service<FixAv>(s =>
                 {
-                    if (process.MainModule.FileName.StartsWith(@"C:\Program Files (x86)\Sophos"))
-                    {
-                        if (process.PriorityClass != ProcessPriorityClass.Idle)
-                        {
-                            Console.WriteLine($@"Setting '{process.ProcessName}' ProcessPriorityClass.Idle");
-                            process.PriorityClass = ProcessPriorityClass.Idle;
-                        }
-                    }
-                }
-                catch (Win32Exception)
-                {
-                }
-                catch (InvalidOperationException)
-                {
-                }
-            }
+                    s.ConstructUsing(name => new FixAv());
+                    s.WhenStarted(tc => tc.Start());
+                    s.WhenStopped(tc => tc.Stop());
+                });
+                x.RunAsLocalSystem();
+
+                x.SetDescription("FixAV");
+                x.SetDisplayName("FixAV");
+                x.SetServiceName("FixAV");
+            });
         }
     }
 }
